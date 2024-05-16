@@ -8,7 +8,7 @@
 //!
 //! # What's the point?
 //! - A module state is deterministic over it's events (unless using interior mutability), which allows for easy networking, debugging...
-//! - Modules are like plugins as you simply need to add them or remove them for your needs and they still work on them own. (taking dependencies into account)
+//! - Modules are like plugins as you simply need to add them or remove them for your needs and they still work on their own. (taking dependencies into account)
 //! - Can lead to better codebase structure with less coupling.
 
 use std::{
