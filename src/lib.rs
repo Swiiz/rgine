@@ -32,8 +32,8 @@ pub mod standards;
 /// Modules are an easy way to decouple code.
 /// Those can be loaded from the `Engine` struct.
 ///
-/// Self is the Module `State`
-/// ListeningTo is a list of events that the module is listening to `(EventA, .., EventZ,)` using the `Listener<SomeEvent>` trait
+/// - Self is the Module `State`
+/// - ListeningTo is a list of events that the module is listening to `(EventA, .., EventZ,)` using the `Listener<SomeEvent>` trait
 ///
 /// TODO:
 ///  - Allow for module config (how?)
