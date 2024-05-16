@@ -7,7 +7,7 @@
 //! - [`Engine`] does the heavy-lifting and allows for loading of events.
 //!
 //! # What's the point?
-//! - A module state is deterministic over it's events (unless you use interior mutability), which allows for easy networking, debugging...
+//! - A module state is deterministic over it's events (unless using interior mutability), which allows for easy networking, debugging...
 //! - Modules are like plugins as you simply need to add them or remove them for your needs and they still work on them own. (taking dependencies into account)
 //! - Can lead to better codebase structure with less coupling.
 
