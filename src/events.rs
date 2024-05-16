@@ -5,10 +5,14 @@ use std::{
 
 use crate::ModuleListener;
 
+/// Allows for module to listen to Event `T`.
+///
+/// **WARNING: For this to work you need to add the event type to the associated type `<Self as Module>::ListeningTo`**
 pub trait Listener<T>: 'static {
     fn on_event(&mut self, event: &mut T, queue: &mut EventQueue);
 }
 
+/// Queue of events to be executed
 pub struct EventQueue {
     inner: Vec<Box<dyn Any>>,
 }
@@ -27,16 +31,18 @@ impl EventQueue {
         self.inner.is_empty()
     }
 
+    /// Pushes a new event `T` into the event queue to be dispatched.
     pub fn push<T: 'static>(&mut self, event: T) {
         self.inner.push(Box::new(event))
     }
 }
 
+/// Simply a tuple of Events, for examples: `()`, `(EventA,)` or `(EventA, EventB, EventC)`.
+///
 /// `(A, .., Z,): EventList<T>` is valid only if `T: Listener<A> + .. + Listener<Z>`
 pub trait EventList<T> {
     fn raw_listeners() -> ModuleListener<T>;
 }
-trait Contains<T> {}
 impl<T> EventList<T> for () {
     fn raw_listeners() -> ModuleListener<T> {
         HashMap::new()

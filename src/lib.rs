@@ -1,3 +1,16 @@
+//! Modules are an easy way to decouple code.
+//! This crate allows for usage of those as well as events.
+//!
+//! # How does it work?
+//! - [`Module`] is trait that you can implement on a struct to make it a module and make the struct data become it's state.
+//! - `Events` can be anything and modules can listen for them to modify themselves like in a state machine using the [`Listener<_>`](events::Listener) trait.
+//! - [`Engine`] does the heavy-lifting and allows for loading of events.
+//!
+//! # What's the point?
+//! - A module state is deterministic over it's events (unless you use interior mutability), which allows for easy networking, debugging...
+//! - Modules are like plugins as you simply need to add them or remove them for your needs and they still work on them own. (taking dependencies into account)
+//! - Can lead to better codebase structure with less coupling.
+
 use std::{
     any::{Any, TypeId},
     cell::{Ref, RefCell, RefMut},
@@ -16,7 +29,7 @@ use crate::{
 pub mod events;
 pub mod standards;
 
-/// Modules are an easy way to decouple the game engine code.
+/// Modules are an easy way to decouple code.
 /// Those can be loaded from the `Engine` struct.
 ///
 /// Self is the Module `State`
@@ -33,8 +46,11 @@ pub trait Module: Any + Sized {
 }
 
 #[derive(Debug)]
+/// Error relative to modules
 pub enum ModuleError {
+    /// Error occured during initialization
     InitError(Box<dyn Error>),
+    /// Error occured because the engine can't support two instances of the same module
     AlreadyExist,
 }
 
@@ -49,11 +65,13 @@ impl Display for ModuleError {
 
 impl Error for ModuleError {}
 
+/// A result with any error
 pub type AnyResult<T> = Result<T, Box<dyn Error>>;
 
-pub type Modules = HashMap<TypeId, AnyModule>;
-pub type EventModuleSubscribers = HashMap<TypeId, Vec<TypeId>>;
+type Modules = HashMap<TypeId, AnyModule>;
+type EventModuleSubscribers = HashMap<TypeId, Vec<TypeId>>;
 
+/// Allows for instantiation, storage and event dispatching of modules
 pub struct Engine {
     modules: Modules,
     subscribers: EventModuleSubscribers,
@@ -66,9 +84,10 @@ impl Engine {
             subscribers: EventModuleSubscribers::new(),
         }
     }
-}
 
-impl Engine {
+    /// Loads the module `T` and returns it as a `Dependency<T>`.
+    ///
+    /// In case the module is already loaded or the initialization fail, an error is returned instead.
     pub fn load_module<T: Module>(&mut self) -> Result<Dependency<T>, ModuleError> {
         let tid = TypeId::of::<T>();
 
@@ -87,10 +106,14 @@ impl Engine {
         }
     }
 
+    /// Check if a module is loadedd
     pub fn is_loaded<T: Module>(&self) -> bool {
         self.modules.contains_key(&TypeId::of::<T>())
     }
 
+    /// Returns the module `T` as a `Dependency<T>`, loading it if not found.
+    ///
+    /// In case the initialization fail, an error is returned instead.
     pub fn dependency<T: Module>(&mut self) -> Result<Dependency<T>, ModuleError> {
         if !self.is_loaded::<T>() {
             return self.load_module::<T>();
@@ -100,6 +123,8 @@ impl Engine {
         ))
     }
 
+    /// Dispatch the event `standards::OnStart` to all the modules
+    /// and continue dispatching events until the `EventQueue` is empty.
     pub fn run(&mut self) {
         let mut event_queue = EventQueue::new();
         event_queue.push(OnStart);
@@ -120,35 +145,14 @@ impl Engine {
     }
 }
 
-pub type ModuleListener<T> =
-    HashMap<TypeId, Box<dyn Fn(&mut T, &mut Box<dyn Any>, &mut EventQueue)>>;
+type ModuleListener<T> = HashMap<TypeId, Box<dyn Fn(&mut T, &mut Box<dyn Any>, &mut EventQueue)>>;
 type AnyListener = Box<dyn Fn(RefMut<dyn Any>, &mut Box<dyn Any>, &mut EventQueue)>;
 
 type ModuleState = Rc<RefCell<dyn Any>>;
 
-pub struct AnyModule {
+struct AnyModule {
     state: ModuleState,
     listeners: HashMap<TypeId, Box<dyn Fn(RefMut<dyn Any>, &mut Box<dyn Any>, &mut EventQueue)>>,
-}
-
-pub struct Dependency<T: Module> {
-    _marker: PhantomData<T>,
-    state: ModuleState,
-}
-
-impl<T: Module> Dependency<T> {
-    fn new(module: &AnyModule) -> Self {
-        Self {
-            _marker: PhantomData,
-            state: module.state.clone(),
-        }
-    }
-
-    pub fn read_state(&self) -> Ref<'_, T> {
-        Ref::map((*self.state).borrow(), |state| {
-            state.downcast_ref::<T>().unwrap()
-        })
-    }
 }
 
 impl AnyModule {
@@ -178,5 +182,28 @@ impl AnyModule {
         if let Some(callback) = self.listeners.get(&(&**event).type_id()) {
             callback((*self.state).borrow_mut(), event, event_queue)
         };
+    }
+}
+
+/// An immutable handle to a `Module`.
+///
+/// You can read it's state with the `read_state(&self)` method.
+pub struct Dependency<T: Module> {
+    _marker: PhantomData<T>,
+    state: ModuleState,
+}
+
+impl<T: Module> Dependency<T> {
+    fn new(module: &AnyModule) -> Self {
+        Self {
+            _marker: PhantomData,
+            state: module.state.clone(),
+        }
+    }
+
+    pub fn read_state(&self) -> Ref<'_, T> {
+        Ref::map((*self.state).borrow(), |state| {
+            state.downcast_ref::<T>().unwrap()
+        })
     }
 }
