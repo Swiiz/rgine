@@ -38,7 +38,9 @@ impl EventQueue {
 }
 
 /// Simply a tuple of Events, for examples: `()`, `(EventA,)` or `(EventA, EventB, EventC)`.
+/// But the generic type `T` must implement [`Listener<E>`](Listener) for every event `E` in the tuple.
 ///
+/// In other terms:
 /// `(A, .., Z,): EventList<T>` is valid only if `T: Listener<A> + .. + Listener<Z>`
 pub trait EventList<T> {
     fn raw_listeners() -> ModuleListener<T>;
