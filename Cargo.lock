@@ -3,5 +3,12 @@
 version = 3
 
 [[package]]
-name = "rengine"
+name = "rgine"
+version = "0.1.0"
+dependencies = [
+ "rgine_modules",
+]
+
+[[package]]
+name = "rgine_modules"
 version = "0.1.0"
