@@ -10,6 +10,9 @@
 //! - A module state is deterministic over it's events (unless using interior mutability), which allows for easy networking, debugging...
 //! - Modules are like plugins as you simply need to add them or remove them for your needs and they still work on their own. (taking dependencies into account)
 //! - Can lead to better codebase structure with less coupling.
+//!
+//! # Optional features
+//! - `standards`: often used events (game engine related), useful for compatibility between modules (enabled by default)
 
 use std::{
     any::{Any, TypeId},
@@ -21,12 +24,10 @@ use std::{
     rc::Rc,
 };
 
-use crate::{
-    events::{EventList, EventQueue},
-    standards::events::OnStart,
-};
+use crate::events::{EventList, EventQueue};
 
 pub mod events;
+#[cfg(feature = "standards")]
 pub mod standards;
 
 /// Modules are an easy way to decouple code.
@@ -123,11 +124,18 @@ impl Engine {
         ))
     }
 
-    /// Dispatch the event `standards::OnStart` to all the modules
-    /// and continue dispatching events until the `EventQueue` is empty.
-    pub fn run(&mut self) {
+    /// Dispatch the event [`standards::events::OnStart`] to all subscribed modules
+    /// and continue dispatching events until the [`EventQueue`] is empty.
+    #[cfg(feature = "standards")]
+    pub fn run_standalone(&mut self) {
+        self.run_with(standards::events::OnStart)
+    }
+
+    /// Dispatch the event `T` to all subscribed modules
+    /// and continue dispatching events until the [`EventQueue`] is empty.
+    pub fn run_with<T: 'static>(&mut self, event: T) {
         let mut event_queue = EventQueue::new();
-        event_queue.push(OnStart);
+        event_queue.push(event);
 
         while !event_queue.is_empty() {
             for mut event in event_queue.drain() {

@@ -1,0 +1,13 @@
+[package]
+name = "rgine_platform"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+window = ["winit"]
+default = ["window"]
+
+[dependencies]
+rgine_modules =  { path = "../modules" }
+
+winit = { version = "0.30.0", optional = true }
