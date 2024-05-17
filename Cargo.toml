@@ -5,9 +5,11 @@ edition = "2021"
 
 [dependencies]
 rgine_modules = { path = "core/modules/"}
+rgine_platform = { path = "core/platform/"}
 
 [workspace]
 members = [
   ".", 
-  "core/*"
+  "core/*",
+  "examples/*",
 ] 
