@@ -1,5 +1,5 @@
 [package]
-name = "window2d"
+name = "rgine_window2d_example"
 version = "0.1.0"
 edition = "2021"
 

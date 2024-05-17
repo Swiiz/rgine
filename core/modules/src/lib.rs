@@ -53,13 +53,22 @@ pub enum ModuleError {
     InitError(Box<dyn Error>),
     /// Error occured because the engine can't support two instances of the same module
     AlreadyExist,
+    /// Error occured because the target module could not be found
+    NotFound,
+    /// Error occured because the target module is in use and thus can't be unloaded
+    InUse,
 }
 
 impl Display for ModuleError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::InitError(_) => write!(f, "Failed to initialize module"),
-            Self::AlreadyExist => write!(f, "Module already exist"),
+            Self::AlreadyExist => write!(
+                f,
+                "The engine can't support two instances of the same module"
+            ),
+            Self::NotFound => write!(f, "The target module could not be found"),
+            Self::InUse => write!(f, "The target module is in use and thus can't be unloaded"),
         }
     }
 }
@@ -104,6 +113,24 @@ impl Engine {
             Ok(self.dependency()?)
         } else {
             Err(ModuleError::AlreadyExist)
+        }
+    }
+
+    /// Unloads the module `T` and returns its current state.
+    ///
+    /// In case the module is not already loaded, an error is returned instead.
+    pub fn unload_module<T: Module>(&mut self) -> Result<T, ModuleError> {
+        let tid = TypeId::of::<T>();
+
+        if self.is_loaded::<T>() {
+            let module = self.modules.remove(&tid).unwrap();
+            for event in module.listeners.keys() {
+                self.subscribers.remove(event);
+            }
+            let state = Rc::into_inner(module.state).ok_or(ModuleError::InUse)?;
+            Ok(*state.into_inner().downcast::<T>().unwrap())
+        } else {
+            Err(ModuleError::NotFound)
         }
     }
 
@@ -154,29 +181,34 @@ impl Engine {
 }
 
 type ModuleListener<T> = HashMap<TypeId, Box<dyn Fn(&mut T, &mut Box<dyn Any>, &mut EventQueue)>>;
-type AnyListener = Box<dyn Fn(RefMut<dyn Any>, &mut Box<dyn Any>, &mut EventQueue)>;
+type AnyListener = Box<dyn Fn(RefMut<Box<dyn Any>>, &mut Box<dyn Any>, &mut EventQueue)>;
 
-type ModuleState = Rc<RefCell<dyn Any>>;
+type ModuleState = Rc<RefCell<Box<dyn Any>>>;
 
 struct AnyModule {
     state: ModuleState,
-    listeners: HashMap<TypeId, Box<dyn Fn(RefMut<dyn Any>, &mut Box<dyn Any>, &mut EventQueue)>>,
+    listeners:
+        HashMap<TypeId, Box<dyn Fn(RefMut<Box<dyn Any>>, &mut Box<dyn Any>, &mut EventQueue)>>,
 }
 
 impl AnyModule {
     fn new<T: Module>(state: T) -> AnyModule {
         Self {
-            state: Rc::new(RefCell::new(state)),
+            state: Rc::new(RefCell::new(Box::new(state))),
             listeners: T::ListeningTo::raw_listeners()
                 .into_iter()
                 .map(|(tid, callback)| {
                     (
                         tid,
                         Box::new(
-                            move |mut any_self: RefMut<dyn Any>,
+                            move |mut any_self: RefMut<Box<dyn Any>>,
                                   any_event: &mut Box<dyn Any>,
                                   event_queue: &mut EventQueue| {
-                                callback(any_self.downcast_mut().unwrap(), any_event, event_queue)
+                                callback(
+                                    any_self.as_mut().downcast_mut().unwrap(),
+                                    any_event,
+                                    event_queue,
+                                )
                             },
                         ) as AnyListener,
                     )
