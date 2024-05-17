@@ -15,7 +15,7 @@ fn main() {
         .load_module::<AutoLog>()
         .expect("Failed to load Module A");
 
-    engine.run_standalone();
+    engine.start();
 }
 
 pub struct AutoLog {

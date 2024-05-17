@@ -127,7 +127,7 @@ impl Engine {
     /// Dispatch the event [`standards::events::OnStart`] to all subscribed modules
     /// and continue dispatching events until the [`EventQueue`] is empty.
     #[cfg(feature = "standards")]
-    pub fn run_standalone(&mut self) {
+    pub fn start(&mut self) {
         self.run_with(standards::events::OnStart)
     }
 
