@@ -1,0 +1,13 @@
+[package]
+name = "rgine_graphics"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+rgine_modules = { path = "../modules" }
+rgine_platform = { path = "../platform" }
+
+pollster = "0.3.0"
+wgpu = "0.20.0"

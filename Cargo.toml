@@ -5,7 +5,12 @@ edition = "2021"
 
 [dependencies]
 rgine_modules = { path = "core/modules/"}
-rgine_platform = { path = "core/platform/"}
+rgine_platform = { path = "core/platform/", default-features = false}
+rgine_graphics = { path = "core/graphics/", optional = true }
+
+[features]
+graphics = ["rgine_platform/window", "dep:rgine_graphics"]
+default = ["graphics"]
 
 [workspace]
 members = [

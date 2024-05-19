@@ -1,25 +1,24 @@
 use rgine::{
+    graphics::OnRender,
     modules::{
         events::{EventQueue, Listener},
-        standards::events::{OnRender, OnStart, OnUpdate},
+        standards::events::OnStart,
         AnyResult, Engine, Module,
     },
     platform::window::{WindowPlatformConfig, WindowPlatformEngineExt},
 };
 
-fn main() {
+fn main() -> AnyResult<()> {
     let mut engine = Engine::new();
 
-    engine.load_module::<MyModule>().unwrap();
+    engine.dependency::<MyModule>().unwrap();
 
-    engine
-        .run_windowed(WindowPlatformConfig::default())
-        .unwrap();
+    engine.run_windowed(WindowPlatformConfig::default())
 }
 
 struct MyModule;
 impl Module for MyModule {
-    type ListeningTo = (OnStart, OnUpdate, OnRender);
+    type ListeningTo = (OnStart, OnRender);
     fn new(_: &mut Engine) -> AnyResult<Self> {
         Ok(MyModule)
     }
@@ -28,11 +27,6 @@ impl Module for MyModule {
 impl Listener<OnStart> for MyModule {
     fn on_event(&mut self, _: &mut OnStart, _: &mut EventQueue) {
         // Init...
-    }
-}
-impl Listener<OnUpdate> for MyModule {
-    fn on_event(&mut self, _: &mut OnUpdate, _: &mut EventQueue) {
-        // Update...
     }
 }
 impl Listener<OnRender> for MyModule {

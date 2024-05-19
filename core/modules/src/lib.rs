@@ -15,16 +15,19 @@
 //! - `standards`: often used events (game engine related), useful for compatibility between modules (enabled by default)
 
 use std::{
-    any::{Any, TypeId},
+    any::{type_name, Any, TypeId},
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     error::Error,
     fmt::Display,
     marker::PhantomData,
     rc::Rc,
+    time::Instant,
 };
 
-use crate::events::{EventList, EventQueue};
+use events::Event;
+
+use crate::events::{DebugName, EventList, EventQueue};
 
 pub mod events;
 #[cfg(feature = "standards")]
@@ -37,9 +40,8 @@ pub mod standards;
 /// - ListeningTo is a list of events that the module is listening to `(EventA, .., EventZ,)` using the `Listener<SomeEvent>` trait
 ///
 /// TODO:
-///  - Allow for module config (how?)
-///  - Allow for unloading, and maybe even hot reloading if possible
 ///  - Allow for debug informations on a per module basis.
+///  - Maybe allow for hot reloading if possible
 pub trait Module: Any + Sized {
     type ListeningTo: EventList<Self>;
 
@@ -95,12 +97,11 @@ impl Engine {
         }
     }
 
-    /// Loads the module `T` and returns it as a `Dependency<T>`.
+    /// Returns the module `T` as a `Dependency<T>`, loading it if not found.
     ///
-    /// In case the module is already loaded or the initialization fail, an error is returned instead.
-    pub fn load_module<T: Module>(&mut self) -> Result<Dependency<T>, ModuleError> {
+    /// In case the initialization fail, an error is returned instead.
+    pub fn dependency<T: Module>(&mut self) -> Result<Dependency<T>, ModuleError> {
         let tid = TypeId::of::<T>();
-
         if !self.is_loaded::<T>() {
             let module = AnyModule::new(T::new(self).map_err(ModuleError::InitError)?);
             for event in module.listeners.keys() {
@@ -110,10 +111,9 @@ impl Engine {
                     .push(TypeId::of::<T>());
             }
             self.modules.insert(tid, module);
-            Ok(self.dependency()?)
-        } else {
-            Err(ModuleError::AlreadyExist)
+            return Ok(self.dependency()?);
         }
+        Ok(Dependency::new(self.modules.get(&tid).unwrap()))
     }
 
     /// Unloads the module `T` and returns its current state.
@@ -139,18 +139,6 @@ impl Engine {
         self.modules.contains_key(&TypeId::of::<T>())
     }
 
-    /// Returns the module `T` as a `Dependency<T>`, loading it if not found.
-    ///
-    /// In case the initialization fail, an error is returned instead.
-    pub fn dependency<T: Module>(&mut self) -> Result<Dependency<T>, ModuleError> {
-        if !self.is_loaded::<T>() {
-            return self.load_module::<T>();
-        }
-        Ok(Dependency::new(
-            self.modules.get(&TypeId::of::<T>()).unwrap(),
-        ))
-    }
-
     /// Dispatch the event [`standards::events::OnStart`] to all subscribed modules
     /// and continue dispatching events until the [`EventQueue`] is empty.
     #[cfg(feature = "standards")]
@@ -160,35 +148,45 @@ impl Engine {
 
     /// Dispatch the event `T` to all subscribed modules
     /// and continue dispatching events until the [`EventQueue`] is empty.
-    pub fn run_with<T: 'static>(&mut self, event: T) {
-        let mut event_queue = EventQueue::new();
-        event_queue.push(event);
+    pub fn run_with<T: Event>(&mut self, event: T) {
+        let mut root_event_queue = EventQueue::new();
+        root_event_queue.push(event);
 
-        while !event_queue.is_empty() {
-            for mut event in event_queue.drain() {
+        println!("New Root Event: {}", type_name::<T>());
+        while !root_event_queue.is_empty() {
+            for event in root_event_queue.drain() {
+                let now = Instant::now();
+                print!("- Executing: {}", DebugName::of(&*event));
+
+                let mut event = event.as_any();
                 let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
+                    println!("  ~ Empty Schedule ~");
                     continue;
                 };
+
+                let mut event_queue = EventQueue::new();
 
                 for tid in modules {
                     self.modules
                         .get_mut(tid)
-                        .map(|m| m.handle_event(&mut event, &mut event_queue));
+                        .map(|m| m.handle_event(event.as_mut(), &mut event_queue));
                 }
+
+                root_event_queue = root_event_queue.merge_after(event_queue);
+                println!(", done in {}ms", now.elapsed().as_secs_f32() / 1000.)
             }
         }
     }
 }
 
-type ModuleListener<T> = HashMap<TypeId, Box<dyn Fn(&mut T, &mut Box<dyn Any>, &mut EventQueue)>>;
-type AnyListener = Box<dyn Fn(RefMut<Box<dyn Any>>, &mut Box<dyn Any>, &mut EventQueue)>;
+type ModuleListener<T> = HashMap<TypeId, Box<dyn Fn(&mut T, &mut dyn Any, &mut EventQueue)>>;
+type AnyListener = Box<dyn Fn(RefMut<Box<dyn Any>>, &mut dyn Any, &mut EventQueue)>;
 
 type ModuleState = Rc<RefCell<Box<dyn Any>>>;
 
 struct AnyModule {
     state: ModuleState,
-    listeners:
-        HashMap<TypeId, Box<dyn Fn(RefMut<Box<dyn Any>>, &mut Box<dyn Any>, &mut EventQueue)>>,
+    listeners: HashMap<TypeId, Box<dyn Fn(RefMut<Box<dyn Any>>, &mut dyn Any, &mut EventQueue)>>,
 }
 
 impl AnyModule {
@@ -202,7 +200,7 @@ impl AnyModule {
                         tid,
                         Box::new(
                             move |mut any_self: RefMut<Box<dyn Any>>,
-                                  any_event: &mut Box<dyn Any>,
+                                  any_event: &mut dyn Any,
                                   event_queue: &mut EventQueue| {
                                 callback(
                                     any_self.as_mut().downcast_mut().unwrap(),
@@ -218,8 +216,8 @@ impl AnyModule {
     }
 
     // Should only be called if the module have subscribed to the event!
-    fn handle_event(&mut self, event: &mut Box<dyn Any>, event_queue: &mut EventQueue) {
-        if let Some(callback) = self.listeners.get(&(&**event).type_id()) {
+    fn handle_event(&mut self, event: &mut dyn Any, event_queue: &mut EventQueue) {
+        if let Some(callback) = self.listeners.get(&(&*event).type_id()) {
             callback((*self.state).borrow_mut(), event, event_queue)
         };
     }
@@ -241,6 +239,7 @@ impl<T: Module> Dependency<T> {
         }
     }
 
+    /// Read the module state immutably
     pub fn read_state(&self) -> Ref<'_, T> {
         Ref::map((*self.state).borrow(), |state| {
             state.downcast_ref::<T>().unwrap()

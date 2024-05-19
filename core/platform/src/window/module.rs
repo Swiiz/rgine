@@ -1,8 +1,7 @@
-use std::cell::OnceCell;
+use std::{cell::OnceCell, sync::Arc};
 
 use rgine_modules::{
     events::{EventQueue, Listener},
-    standards::events::OnRender,
     Engine, Module,
 };
 use winit::{
@@ -10,14 +9,15 @@ use winit::{
     window::Window,
 };
 
-pub struct OnRenderFinished;
+pub struct OnRequestWindowRedraw;
+pub struct OnRenderReady;
 
 pub struct WindowPlatformModule {
     pub should_close: bool,
-    pub window: OnceCell<Window>,
+    pub window: OnceCell<Arc<Window>>,
 }
 impl Module for WindowPlatformModule {
-    type ListeningTo = (WindowEvent, DeviceEvent, OnRenderFinished);
+    type ListeningTo = (WindowEvent, DeviceEvent, OnRequestWindowRedraw);
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(Self {
             should_close: false,
@@ -32,15 +32,14 @@ impl Listener<WindowEvent> for WindowPlatformModule {
                 self.should_close = true;
             }
             WindowEvent::RedrawRequested => {
-                queue.push(OnRender);
-                queue.push(OnRenderFinished); //TODO: Could we use After<OnRender> instead? (todo in the modules engine)
+                queue.push(OnRenderReady);
             }
             _ => (),
         }
     }
 }
-impl Listener<OnRenderFinished> for WindowPlatformModule {
-    fn on_event(&mut self, _: &mut OnRenderFinished, _: &mut EventQueue) {
+impl Listener<OnRequestWindowRedraw> for WindowPlatformModule {
+    fn on_event(&mut self, _: &mut OnRequestWindowRedraw, _: &mut EventQueue) {
         self.window.get().unwrap().request_redraw()
     }
 }

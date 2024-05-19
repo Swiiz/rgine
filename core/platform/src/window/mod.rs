@@ -1,10 +1,7 @@
-use std::error::Error;
+use std::{error::Error, sync::Arc};
 
 use self::module::WindowPlatformModule;
-use rgine_modules::{
-    standards::events::{OnShutdown, OnUpdate},
-    Engine,
-};
+use rgine_modules::{standards::events::OnShutdown, Engine};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -13,7 +10,7 @@ use winit::{
 };
 
 pub mod module;
-pub use winit::window::WindowAttributes;
+pub use winit::window::{Window, WindowAttributes};
 
 pub trait WindowPlatformEngineExt {
     fn run_windowed(&mut self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>>;
@@ -24,7 +21,7 @@ impl WindowPlatformEngineExt for Engine {
         let event_loop = EventLoop::new().unwrap();
         event_loop.set_control_flow(ControlFlow::Poll);
 
-        self.load_module::<WindowPlatformModule>()?;
+        self.dependency::<WindowPlatformModule>()?;
         self.start();
 
         let mut platform_layer = EngineWindowPlatformWrapper::new(self, config);
@@ -57,6 +54,9 @@ impl<'a> EngineWindowPlatformWrapper<'a> {
     }
 }
 
+pub struct OnWindowPlatformResumed;
+pub struct OnWindowPlatformUpdate;
+
 impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         self.engine
@@ -64,12 +64,13 @@ impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
             .unwrap()
             .read_state()
             .window
-            .set(
+            .set(Arc::new(
                 event_loop
                     .create_window(self.config.window_attributes.clone())
                     .unwrap(),
-            )
+            ))
             .unwrap();
+        self.engine.run_with(OnWindowPlatformResumed);
     }
 
     fn window_event(&mut self, _event_loop: &ActiveEventLoop, _wid: WindowId, event: WindowEvent) {
@@ -86,7 +87,7 @@ impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
     }
 
     fn about_to_wait(&mut self, event_loop: &ActiveEventLoop) {
-        self.engine.run_with(OnUpdate);
+        self.engine.run_with(OnWindowPlatformUpdate);
         if self
             .engine
             .dependency::<WindowPlatformModule>()

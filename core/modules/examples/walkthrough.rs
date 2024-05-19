@@ -12,7 +12,7 @@ fn main() {
     let mut engine = Engine::new();
 
     engine
-        .load_module::<AutoLog>()
+        .dependency::<AutoLog>()
         .expect("Failed to load Module A");
 
     engine.start();

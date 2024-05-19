@@ -1,13 +1,15 @@
 use rgine_modules::{
     events::{EventQueue, Listener},
-    standards::events::{OnRender, OnShutdown, OnStart, OnUpdate},
+    standards::events::{OnShutdown, OnStart},
     Engine, Module,
 };
-use rgine_platform::window::{WindowPlatformConfig, WindowPlatformEngineExt};
+use rgine_platform::window::{
+    module::OnRenderReady, OnWindowPlatformUpdate, WindowPlatformConfig, WindowPlatformEngineExt,
+};
 
 fn main() {
     let mut engine = Engine::new();
-    engine.load_module::<ExampleModule>().unwrap();
+    engine.dependency::<ExampleModule>().unwrap();
     engine
         .run_windowed(WindowPlatformConfig::default())
         .unwrap();
@@ -15,7 +17,7 @@ fn main() {
 
 struct ExampleModule;
 impl Module for ExampleModule {
-    type ListeningTo = (OnStart, OnUpdate, OnRender, OnShutdown);
+    type ListeningTo = (OnStart, OnWindowPlatformUpdate, OnRenderReady, OnShutdown);
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(ExampleModule)
     }
@@ -26,14 +28,14 @@ impl Listener<OnStart> for ExampleModule {
         println!("On start!")
     }
 }
-impl Listener<OnUpdate> for ExampleModule {
-    fn on_event(&mut self, _: &mut OnUpdate, _: &mut EventQueue) {
+impl Listener<OnWindowPlatformUpdate> for ExampleModule {
+    fn on_event(&mut self, _: &mut OnWindowPlatformUpdate, _: &mut EventQueue) {
         println!("On update!")
     }
 }
-impl Listener<OnRender> for ExampleModule {
-    fn on_event(&mut self, _: &mut OnRender, _: &mut EventQueue) {
-        println!("On render!")
+impl Listener<OnRenderReady> for ExampleModule {
+    fn on_event(&mut self, _: &mut OnRenderReady, _: &mut EventQueue) {
+        println!("On render rady!")
     }
 }
 impl Listener<OnShutdown> for ExampleModule {
