@@ -24,7 +24,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@v4
       - name: Clean docs folder
-        run: cargo clean --doc --all
+        run: cargo clean --doc
       - name: Build docs
         run: cargo doc --no-deps --all
       - name: Add redirect
