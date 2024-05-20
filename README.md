@@ -6,6 +6,8 @@
 **🦀 Rust modular game engine made from scratch.
 The code is divided into crates, each having example to better understand how the engine works.**
 
+Check out the todo list at `todo.txt`.
+
 ## Examples and how to run
 
 > Event scheduling debug logging can be enabled using the flag `--features "rgine/schedulelog"` or the `schedulelog` feature of the rgine root crate. (Consider logging into a file using for example `> log.txt` on windows)

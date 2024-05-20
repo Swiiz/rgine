@@ -1,7 +1,7 @@
 use rgine_logger::info;
 use rgine_modules::{
     events::{EventQueue, Listener},
-    standards::events::{OnShutdown, OnStart},
+    standards::events::{ShutdownEvent, StartEvent},
     Engine, Module,
 };
 use rgine_platform::window::{
@@ -20,18 +20,18 @@ fn main() {
 struct ExampleModule;
 impl Module for ExampleModule {
     type ListeningTo = (
-        OnStart,
+        StartEvent,
         OnWindowPlatformUpdate,
         WindowRenderReadyEvent,
-        OnShutdown,
+        ShutdownEvent,
     );
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(ExampleModule)
     }
 }
 
-impl Listener<OnStart> for ExampleModule {
-    fn on_event(&mut self, _: &mut OnStart, _: &mut EventQueue) {
+impl Listener<StartEvent> for ExampleModule {
+    fn on_event(&mut self, _: &mut StartEvent, _: &mut EventQueue) {
         info!("On start!")
     }
 }
@@ -45,8 +45,8 @@ impl Listener<WindowRenderReadyEvent> for ExampleModule {
         info!("On render rady!")
     }
 }
-impl Listener<OnShutdown> for ExampleModule {
-    fn on_event(&mut self, _: &mut OnShutdown, _: &mut EventQueue) {
+impl Listener<ShutdownEvent> for ExampleModule {
+    fn on_event(&mut self, _: &mut ShutdownEvent, _: &mut EventQueue) {
         info!("On shutdown!")
     }
 }

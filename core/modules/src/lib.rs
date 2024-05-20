@@ -148,7 +148,7 @@ impl Engine {
     /// and continue dispatching events until the [`EventQueue`] is empty.
     #[cfg(feature = "standards")]
     pub fn start(&mut self) {
-        self.run_with(standards::events::OnStart)
+        self.run_with(standards::events::StartEvent)
     }
 
     /// Dispatch the event `T` to all subscribed modules
@@ -165,6 +165,8 @@ impl Engine {
 
             let mut event = event.as_any();
             let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
+                #[cfg(feature = "debuglog")]
+                debug!(" ~ No listener for {}", debug_name);
                 continue;
             };
 

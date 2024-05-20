@@ -1,6 +1,7 @@
 use ctx::{Frame, GraphicsCtx};
 use rgine_modules::{
     events::{EventQueue, Listener},
+    standards::events::ShutdownEvent,
     AnyResult, Dependency, Engine, Module,
 };
 use rgine_platform::window::module::{
@@ -36,6 +37,7 @@ impl Module for GraphicsModule {
         SurfaceResizeEvent,
         WindowRenderReadyEvent,
         RenderPresentEvent,
+        ShutdownEvent,
     );
 
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
@@ -78,5 +80,11 @@ impl Listener<RenderPresentEvent> for GraphicsModule {
             frame.present();
             queue.push(RequestWindowRedrawEvent);
         });
+    }
+}
+impl Listener<ShutdownEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut ShutdownEvent, _: &mut EventQueue) {
+        // Prevent STATUS_ACCESS_VIOLATION because of platform dependency dropped before this module and so surface is pointing at null window, i guess?
+        self.ctx.take();
     }
 }

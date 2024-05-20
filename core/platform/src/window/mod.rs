@@ -1,7 +1,7 @@
 use std::{error::Error, sync::Arc};
 
 use self::module::WindowPlatformModule;
-use rgine_modules::{standards::events::OnShutdown, Engine};
+use rgine_modules::{standards::events::ShutdownEvent, Engine};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -98,7 +98,7 @@ impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
             .should_close
         {
             event_loop.exit();
-            self.engine.run_with(OnShutdown);
+            self.engine.run_with(ShutdownEvent);
         }
     }
 }

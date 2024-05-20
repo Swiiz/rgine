@@ -1,7 +1,7 @@
 use rgine_logger::info;
 use rgine_modules::{
     events::{EventQueue, Listener},
-    standards::events::OnStart,
+    standards::events::StartEvent,
     Engine, {AnyResult, Dependency, Module},
 };
 
@@ -23,7 +23,7 @@ pub struct AutoLog {
     lang: Dependency<Language>,
 }
 impl Module for AutoLog {
-    type ListeningTo = (OnStart,);
+    type ListeningTo = (StartEvent,);
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
         ctx.dependency::<Printer>()?;
 
@@ -32,8 +32,8 @@ impl Module for AutoLog {
         })
     }
 }
-impl Listener<OnStart> for AutoLog {
-    fn on_event(&mut self, _: &mut OnStart, queue: &mut EventQueue) {
+impl Listener<StartEvent> for AutoLog {
+    fn on_event(&mut self, _: &mut StartEvent, queue: &mut EventQueue) {
         let lang = self.lang.read_state();
 
         queue.push(OnPrint {
