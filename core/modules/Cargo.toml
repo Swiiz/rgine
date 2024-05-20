@@ -9,3 +9,4 @@ debuglog = []
 default = ["standards"]
 
 [dependencies]
+rgine_logger = { path = "../logger" }

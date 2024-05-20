@@ -9,5 +9,6 @@ default = ["window"]
 
 [dependencies]
 rgine_modules =  { path = "../modules" }
+rgine_logger = { path = "../logger" }
 
 winit = { version = "0.30.0", optional = true }

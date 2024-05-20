@@ -1,0 +1,12 @@
+[package]
+name = "rgine_logger"
+version = "0.1.0"
+edition = "2021"
+
+[features]
+ignore_wgpu = []
+default = ["ignore_wgpu"]
+
+[dependencies]
+colored = "2.1.0"
+log = "0.4.21"

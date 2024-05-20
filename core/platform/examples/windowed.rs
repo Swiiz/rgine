@@ -1,10 +1,12 @@
+use rgine_logger::info;
 use rgine_modules::{
     events::{EventQueue, Listener},
     standards::events::{OnShutdown, OnStart},
     Engine, Module,
 };
 use rgine_platform::window::{
-    module::WindowRenderReadyEvent, OnWindowPlatformUpdate, WindowPlatformConfig, WindowPlatformEngineExt,
+    module::WindowRenderReadyEvent, OnWindowPlatformUpdate, WindowPlatformConfig,
+    WindowPlatformEngineExt,
 };
 
 fn main() {
@@ -17,7 +19,12 @@ fn main() {
 
 struct ExampleModule;
 impl Module for ExampleModule {
-    type ListeningTo = (OnStart, OnWindowPlatformUpdate, WindowRenderReadyEvent, OnShutdown);
+    type ListeningTo = (
+        OnStart,
+        OnWindowPlatformUpdate,
+        WindowRenderReadyEvent,
+        OnShutdown,
+    );
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(ExampleModule)
     }
@@ -25,21 +32,21 @@ impl Module for ExampleModule {
 
 impl Listener<OnStart> for ExampleModule {
     fn on_event(&mut self, _: &mut OnStart, _: &mut EventQueue) {
-        println!("On start!")
+        info!("On start!")
     }
 }
 impl Listener<OnWindowPlatformUpdate> for ExampleModule {
     fn on_event(&mut self, _: &mut OnWindowPlatformUpdate, _: &mut EventQueue) {
-        println!("On update!")
+        info!("On update!")
     }
 }
 impl Listener<WindowRenderReadyEvent> for ExampleModule {
     fn on_event(&mut self, _: &mut WindowRenderReadyEvent, _: &mut EventQueue) {
-        println!("On render rady!")
+        info!("On render rady!")
     }
 }
 impl Listener<OnShutdown> for ExampleModule {
     fn on_event(&mut self, _: &mut OnShutdown, _: &mut EventQueue) {
-        println!("On shutdown!")
+        info!("On shutdown!")
     }
 }

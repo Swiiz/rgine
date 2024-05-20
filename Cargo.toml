@@ -8,6 +8,7 @@ edition = "2021"
 # Core
 rgine_modules = { path = "core/modules/"}
 rgine_platform = { path = "core/platform/", default-features = false}
+rgine_logger = { path = "core/logger/" }
 rgine_graphics = { path = "core/graphics/", optional = true }
 
 # External

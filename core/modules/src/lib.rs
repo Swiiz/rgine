@@ -25,6 +25,7 @@ use std::{
 };
 
 use events::Event;
+use rgine_logger::{debug, init_logger};
 
 use crate::events::{EventList, EventQueue};
 
@@ -90,6 +91,11 @@ pub struct Engine {
 
 impl Engine {
     pub fn new() -> Self {
+        init_logger();
+        Self::new_without_logger()
+    }
+
+    pub fn new_without_logger() -> Self {
         Self {
             modules: Modules::new(),
             subscribers: EventModuleSubscribers::new(),
@@ -152,7 +158,7 @@ impl Engine {
         root_event_queue.push(event);
 
         #[cfg(feature = "debuglog")]
-        println!("NEW SCHEDULE:");
+        debug!("NEW SCHEDULE:");
         while let Some(event) = root_event_queue.take_last() {
             #[cfg(feature = "debuglog")]
             let debug_name = events::DebugName::of(&*event);
@@ -163,7 +169,7 @@ impl Engine {
             };
 
             #[cfg(feature = "debuglog")]
-            println!(
+            debug!(
                 " - Dispatching {} on {} module(s).",
                 debug_name,
                 modules.len()

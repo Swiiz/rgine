@@ -1,3 +1,4 @@
+use rgine_logger::info;
 use rgine_modules::{
     events::{EventQueue, Listener},
     standards::events::OnStart,
@@ -62,6 +63,6 @@ impl Module for Printer {
 }
 impl Listener<OnPrint> for Printer {
     fn on_event(&mut self, event: &mut OnPrint, _: &mut EventQueue) {
-        println!("{}", event.message)
+        info!("{}", event.message)
     }
 }
