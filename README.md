@@ -5,7 +5,7 @@ The code is divided into crates, each having example to better understand how th
 
 ## Examples and how to run
 
-> *Event scheduling debug logging can be enabled using the flag `--features "rgine_modules/debuglog"` or the `debuglog` feature of the crate.* (Consider logging into a file using for example `> log.txt` on windows)
+> Event scheduling debug logging can be enabled using the flag `--features "rgine_modules/debuglog"` or the `debuglog` feature of the crate. (Consider logging into a file using for example `> log.txt` on windows)
 
 ### Graphics context:
 
