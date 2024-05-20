@@ -1,4 +1,9 @@
-# 🛠 Rgine
+# 🛠 Rgine [![Documentation][doc-img]][doc-url]
+
+
+
+[doc-img]: https://img.shields.io/badge/docs.rs-rgine-4d76ae
+[doc-url]: https://Swiiz.github.io/rgine/rgine/index
 
 **🦀 Rust modular game engine made from scratch.
 The code is divided into crates, each having example to better understand how the engine works.**
