@@ -4,17 +4,28 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+
+# Core
 rgine_modules = { path = "core/modules/"}
 rgine_platform = { path = "core/platform/", default-features = false}
 rgine_graphics = { path = "core/graphics/", optional = true }
 
+# External
+cgmath = "0.18.0"
+
+# Modules
+rgine_renderer_2d = { path = "modules/renderer_2d", optional = true }
+
 [features]
 graphics = ["rgine_platform/window", "dep:rgine_graphics"]
+2d = ["graphics", "dep:rgine_renderer_2d"]
+schedulelog = ["rgine_modules/debuglog"]
 default = ["graphics"]
 
 [workspace]
 members = [
   ".", 
   "core/*",
-  "examples/*",
+  "modules/*",
+  "examples/*", 
 ] 

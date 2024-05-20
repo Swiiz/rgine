@@ -5,7 +5,7 @@ The code is divided into crates, each having example to better understand how th
 
 ## Examples and how to run
 
-> Event scheduling debug logging can be enabled using the flag `--features "rgine_modules/debuglog"` or the `debuglog` feature of the crate. (Consider logging into a file using for example `> log.txt` on windows)
+> Event scheduling debug logging can be enabled using the flag `--features "rgine/schedulelog" or the `schedulelog` feature of the rgine root crate. (Consider logging into a file using for example `> log.txt` on windows)
 
 ### Main examples:
 
@@ -13,15 +13,17 @@ The code is divided into crates, each having example to better understand how th
 Path: `examples/render2d`  
 How to run: `cargo run -p rgine_render2d_example`
 
-### Module specific examples:
+### Core modules examples:
 
-#### Graphics context (core):
+> Event scheduling debug logging can be enabled using the flag `--features "rgine_modules/debuglog"` or the `debuglog` feature of the crate. (Consider logging into a file using for example `> log.txt` on windows)
+
+#### Graphics context:
 
 - **Simple Render pass:**  
 Path: `core/graphics/examples/simple.rs`  
 How to run: `cargo run -p rgine_graphics --example simple`
 
-#### Platform (core):
+#### Platform:
 
 - **Windowed:**  
 Path: `core/platform/examples/windowed.rs`  
@@ -29,7 +31,7 @@ How to run: `cargo run -p rgine_platform --example windowed`
 
 - **Headless:** TODO...
 
-#### Modules (core):
+#### Modules:
 
 - **Walkthrough:**  
 Path: `core/modules/examples/walkthrough.rs`  

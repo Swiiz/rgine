@@ -3,15 +3,16 @@ use rgine_modules::{
     events::{EventQueue, Listener},
     AnyResult, Dependency, Engine, Module,
 };
-use rgine_platform::window::{
-    module::{RenderReadyEvent, RequestWindowRedrawEvent, WindowPlatformModule, WindowResizeEvent},
-    WindowReadyEvent,
-};
+use rgine_platform::window::module::{RequestWindowRedrawEvent, WindowPlatformModule};
 
 pub mod color;
 pub mod ctx;
 
-pub struct RenderEvent;
+pub use rgine_platform::window::{
+    module::WindowRenderReadyEvent as PreRenderSubmitEvent,
+    module::WindowResizeEvent as SurfaceResizeEvent, WindowReadyEvent,
+};
+pub struct SubmitRenderEvent;
 pub struct RenderPresentEvent;
 
 pub struct GraphicsModule {
@@ -21,11 +22,17 @@ pub struct GraphicsModule {
     pub current_frame: Option<Frame>,
 }
 
+impl GraphicsModule {
+    pub fn window_size(&self) -> Option<(u32, u32)> {
+        self.platform.read_state().window_size()
+    }
+}
+
 impl Module for GraphicsModule {
     type ListeningTo = (
         WindowReadyEvent,
-        WindowResizeEvent,
-        RenderReadyEvent,
+        SurfaceResizeEvent,
+        PreRenderSubmitEvent,
         RenderPresentEvent,
     );
 
@@ -46,18 +53,18 @@ impl Listener<WindowReadyEvent> for GraphicsModule {
         ))
     }
 }
-impl Listener<WindowResizeEvent> for GraphicsModule {
-    fn on_event(&mut self, _: &mut WindowResizeEvent, _: &mut EventQueue) {
+impl Listener<SurfaceResizeEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut SurfaceResizeEvent, _: &mut EventQueue) {
         if let Some(ctx) = &mut self.ctx {
             ctx.resize(self.platform.read_state().window_size().unwrap())
         }
     }
 }
-impl Listener<RenderReadyEvent> for GraphicsModule {
-    fn on_event(&mut self, _: &mut RenderReadyEvent, queue: &mut EventQueue) {
+impl Listener<PreRenderSubmitEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut PreRenderSubmitEvent, queue: &mut EventQueue) {
         if let Some(frame) = self.ctx.as_ref().unwrap().next_frame() {
             self.current_frame = Some(frame);
-            queue.push(RenderEvent);
+            queue.push(SubmitRenderEvent);
             queue.push(RenderPresentEvent);
         }
     }

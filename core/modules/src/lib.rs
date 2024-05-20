@@ -156,7 +156,7 @@ impl Engine {
         while !root_event_queue.is_empty() {
             for event in root_event_queue.drain() {
                 #[cfg(feature = "debuglog")]
-                print!("- Executing: {}", events::DebugName::of(&*event));
+                println!("- Executing: {}", events::DebugName::of(&*event));
 
                 let mut event = event.as_any();
                 let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {

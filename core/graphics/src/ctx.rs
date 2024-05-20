@@ -20,24 +20,24 @@ pub struct Frame {
 impl GraphicsCtx {
     pub(crate) fn new(window: Arc<Window>) -> Self {
         let window_size = window.inner_size().into();
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        let instance = Instance::new(InstanceDescriptor {
             backends: util::backend_bits_from_env().unwrap_or(Backends::all()),
             ..Default::default()
         });
         let surface = instance
             .create_surface(window)
             .unwrap_or_else(|e| panic!("Could not create graphics surface: {e}"));
-        let adapter = pollster::block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::HighPerformance,
+        let adapter = pollster::block_on(instance.request_adapter(&RequestAdapterOptions {
+            power_preference: PowerPreference::HighPerformance,
             compatible_surface: Some(&surface),
             force_fallback_adapter: false,
         }))
         .unwrap();
         let (device, queue) = pollster::block_on(adapter.request_device(
-            &wgpu::DeviceDescriptor {
+            &DeviceDescriptor {
                 label: None,
-                required_features: wgpu::Features::empty(),
-                required_limits: wgpu::Limits::default(),
+                required_features: Features::empty(),
+                required_limits: Limits::default(),
             },
             None,
         ))
@@ -68,8 +68,8 @@ impl GraphicsCtx {
         if window_size.0 > 0 && window_size.1 > 0 {
             self.surface.configure(
                 &self.device,
-                &wgpu::SurfaceConfiguration {
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                &SurfaceConfiguration {
+                    usage: TextureUsages::RENDER_ATTACHMENT,
                     format: self.surface_texture_format,
                     width: window_size.0,
                     height: window_size.1,
@@ -87,7 +87,7 @@ impl GraphicsCtx {
             .surface
             .get_current_texture()
             .map_err(|e| match e {
-                wgpu::SurfaceError::OutOfMemory => {
+                SurfaceError::OutOfMemory => {
                     panic!("The system is out of memory for rendering!")
                 }
                 _ => format!("An error occured during surface texture acquisition: {e}"),
@@ -96,7 +96,7 @@ impl GraphicsCtx {
 
         let view = surface_texture
             .texture
-            .create_view(&wgpu::TextureViewDescriptor::default());
+            .create_view(&TextureViewDescriptor::default());
 
         Some(Frame {
             surface_texture,

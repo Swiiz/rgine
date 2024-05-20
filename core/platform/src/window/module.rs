@@ -10,7 +10,7 @@ use winit::{
 };
 
 pub struct RequestWindowRedrawEvent;
-pub struct RenderReadyEvent;
+pub struct WindowRenderReadyEvent;
 pub struct WindowResizeEvent;
 
 pub struct WindowPlatformModule {
@@ -38,7 +38,10 @@ impl Listener<WindowEvent> for WindowPlatformModule {
                 self.should_close = true;
             }
             WindowEvent::RedrawRequested => {
-                queue.push(RenderReadyEvent);
+                queue.push(WindowRenderReadyEvent);
+            }
+            WindowEvent::Resized(..) | WindowEvent::ScaleFactorChanged { .. } => {
+                queue.push(WindowResizeEvent);
             }
             _ => (),
         }

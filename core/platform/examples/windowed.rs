@@ -4,7 +4,7 @@ use rgine_modules::{
     Engine, Module,
 };
 use rgine_platform::window::{
-    module::RenderReadyEvent, OnWindowPlatformUpdate, WindowPlatformConfig, WindowPlatformEngineExt,
+    module::WindowRenderReadyEvent, OnWindowPlatformUpdate, WindowPlatformConfig, WindowPlatformEngineExt,
 };
 
 fn main() {
@@ -17,7 +17,7 @@ fn main() {
 
 struct ExampleModule;
 impl Module for ExampleModule {
-    type ListeningTo = (OnStart, OnWindowPlatformUpdate, RenderReadyEvent, OnShutdown);
+    type ListeningTo = (OnStart, OnWindowPlatformUpdate, WindowRenderReadyEvent, OnShutdown);
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(ExampleModule)
     }
@@ -33,8 +33,8 @@ impl Listener<OnWindowPlatformUpdate> for ExampleModule {
         println!("On update!")
     }
 }
-impl Listener<RenderReadyEvent> for ExampleModule {
-    fn on_event(&mut self, _: &mut RenderReadyEvent, _: &mut EventQueue) {
+impl Listener<WindowRenderReadyEvent> for ExampleModule {
+    fn on_event(&mut self, _: &mut WindowRenderReadyEvent, _: &mut EventQueue) {
         println!("On render rady!")
     }
 }
