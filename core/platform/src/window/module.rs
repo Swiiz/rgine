@@ -9,15 +9,21 @@ use winit::{
     window::Window,
 };
 
-pub struct OnRequestWindowRedraw;
-pub struct OnRenderReady;
+pub struct RequestWindowRedrawEvent;
+pub struct RenderReadyEvent;
+pub struct WindowResizeEvent;
 
 pub struct WindowPlatformModule {
     pub should_close: bool,
     pub window: OnceCell<Arc<Window>>,
 }
+impl WindowPlatformModule {
+    pub fn window_size(&self) -> Option<(u32, u32)> {
+        self.window.get().map(|w| w.inner_size().into())
+    }
+}
 impl Module for WindowPlatformModule {
-    type ListeningTo = (WindowEvent, DeviceEvent, OnRequestWindowRedraw);
+    type ListeningTo = (WindowEvent, DeviceEvent, RequestWindowRedrawEvent);
     fn new(_: &mut Engine) -> rgine_modules::AnyResult<Self> {
         Ok(Self {
             should_close: false,
@@ -32,14 +38,14 @@ impl Listener<WindowEvent> for WindowPlatformModule {
                 self.should_close = true;
             }
             WindowEvent::RedrawRequested => {
-                queue.push(OnRenderReady);
+                queue.push(RenderReadyEvent);
             }
             _ => (),
         }
     }
 }
-impl Listener<OnRequestWindowRedraw> for WindowPlatformModule {
-    fn on_event(&mut self, _: &mut OnRequestWindowRedraw, _: &mut EventQueue) {
+impl Listener<RequestWindowRedrawEvent> for WindowPlatformModule {
+    fn on_event(&mut self, _: &mut RequestWindowRedrawEvent, _: &mut EventQueue) {
         self.window.get().unwrap().request_redraw()
     }
 }

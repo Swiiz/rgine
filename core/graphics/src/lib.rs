@@ -1,31 +1,33 @@
-use ctx::GraphicsCtx;
+use ctx::{Frame, GraphicsCtx};
 use rgine_modules::{
     events::{EventQueue, Listener},
     AnyResult, Dependency, Engine, Module,
 };
 use rgine_platform::window::{
-    module::{OnRenderReady, OnRequestWindowRedraw, WindowPlatformModule},
-    OnWindowPlatformResumed,
+    module::{RenderReadyEvent, RequestWindowRedrawEvent, WindowPlatformModule, WindowResizeEvent},
+    WindowReadyEvent,
 };
-use wgpu::{SurfaceTexture, TextureView};
 
 pub mod color;
 pub mod ctx;
 
-pub struct OnRender {
-    pub view: TextureView,
-}
-pub struct OnRenderPresent;
+pub struct RenderEvent;
+pub struct RenderPresentEvent;
 
 pub struct GraphicsModule {
     platform: Dependency<WindowPlatformModule>,
 
     pub ctx: Option<GraphicsCtx>,
-    pub current_frame: Option<SurfaceTexture>,
+    pub current_frame: Option<Frame>,
 }
 
 impl Module for GraphicsModule {
-    type ListeningTo = (OnWindowPlatformResumed, OnRenderReady, OnRenderPresent);
+    type ListeningTo = (
+        WindowReadyEvent,
+        WindowResizeEvent,
+        RenderReadyEvent,
+        RenderPresentEvent,
+    );
 
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
         let platform = ctx.dependency::<WindowPlatformModule>()?;
@@ -37,27 +39,34 @@ impl Module for GraphicsModule {
         })
     }
 }
-impl Listener<OnWindowPlatformResumed> for GraphicsModule {
-    fn on_event(&mut self, _: &mut OnWindowPlatformResumed, _: &mut EventQueue) {
+impl Listener<WindowReadyEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut WindowReadyEvent, _: &mut EventQueue) {
         self.ctx = Some(GraphicsCtx::new(
             self.platform.read_state().window.get().unwrap().clone(),
         ))
     }
 }
-impl Listener<OnRenderReady> for GraphicsModule {
-    fn on_event(&mut self, _: &mut OnRenderReady, queue: &mut EventQueue) {
-        if let Some((frame, view)) = self.ctx.as_ref().unwrap().next_frame() {
-            self.current_frame = Some(frame);
-            queue.push(OnRender { view });
-            queue.push(OnRenderPresent);
+impl Listener<WindowResizeEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut WindowResizeEvent, _: &mut EventQueue) {
+        if let Some(ctx) = &mut self.ctx {
+            ctx.resize(self.platform.read_state().window_size().unwrap())
         }
     }
 }
-impl Listener<OnRenderPresent> for GraphicsModule {
-    fn on_event(&mut self, _: &mut OnRenderPresent, queue: &mut EventQueue) {
-        self.current_frame.take().map(|f| {
-            f.present();
-            queue.push(OnRequestWindowRedraw);
+impl Listener<RenderReadyEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut RenderReadyEvent, queue: &mut EventQueue) {
+        if let Some(frame) = self.ctx.as_ref().unwrap().next_frame() {
+            self.current_frame = Some(frame);
+            queue.push(RenderEvent);
+            queue.push(RenderPresentEvent);
+        }
+    }
+}
+impl Listener<RenderPresentEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut RenderPresentEvent, queue: &mut EventQueue) {
+        self.current_frame.take().map(|frame| {
+            frame.present();
+            queue.push(RequestWindowRedrawEvent);
         });
     }
 }

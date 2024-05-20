@@ -1,5 +1,5 @@
 use rgine::{
-    graphics::OnRender,
+    graphics::RenderEvent,
     modules::{
         events::{EventQueue, Listener},
         standards::events::OnStart,
@@ -18,7 +18,7 @@ fn main() -> AnyResult<()> {
 
 struct MyModule;
 impl Module for MyModule {
-    type ListeningTo = (OnStart, OnRender);
+    type ListeningTo = (OnStart, RenderEvent);
     fn new(_: &mut Engine) -> AnyResult<Self> {
         Ok(MyModule)
     }
@@ -29,8 +29,8 @@ impl Listener<OnStart> for MyModule {
         // Init...
     }
 }
-impl Listener<OnRender> for MyModule {
-    fn on_event(&mut self, _: &mut OnRender, _: &mut EventQueue) {
+impl Listener<RenderEvent> for MyModule {
+    fn on_event(&mut self, _: &mut RenderEvent, _: &mut EventQueue) {
         // Render...
     }
 }

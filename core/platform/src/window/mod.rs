@@ -1,6 +1,6 @@
 use std::{error::Error, sync::Arc};
 
-use self::module::WindowPlatformModule;
+use self::module::{WindowPlatformModule, WindowResizeEvent};
 use rgine_modules::{standards::events::OnShutdown, Engine};
 use winit::{
     application::ApplicationHandler,
@@ -13,18 +13,19 @@ pub mod module;
 pub use winit::window::{Window, WindowAttributes};
 
 pub trait WindowPlatformEngineExt {
-    fn run_windowed(&mut self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>>;
+    // Take self as owned so that it can't be called when running the engine
+    fn run_windowed(self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>>;
 }
 
 impl WindowPlatformEngineExt for Engine {
-    fn run_windowed(&mut self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>> {
+    fn run_windowed(mut self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>> {
         let event_loop = EventLoop::new().unwrap();
         event_loop.set_control_flow(ControlFlow::Poll);
 
         self.dependency::<WindowPlatformModule>()?;
         self.start();
 
-        let mut platform_layer = EngineWindowPlatformWrapper::new(self, config);
+        let mut platform_layer = EngineWindowPlatformWrapper::new(&mut self, config);
         event_loop.run_app(&mut platform_layer)?;
         Ok(())
     }
@@ -54,7 +55,7 @@ impl<'a> EngineWindowPlatformWrapper<'a> {
     }
 }
 
-pub struct OnWindowPlatformResumed;
+pub struct WindowReadyEvent;
 pub struct OnWindowPlatformUpdate;
 
 impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
@@ -70,7 +71,8 @@ impl<'a> ApplicationHandler for EngineWindowPlatformWrapper<'a> {
                     .unwrap(),
             ))
             .unwrap();
-        self.engine.run_with(OnWindowPlatformResumed);
+
+        self.engine.run_with(WindowReadyEvent);
     }
 
     fn window_event(&mut self, _event_loop: &ActiveEventLoop, _wid: WindowId, event: WindowEvent) {

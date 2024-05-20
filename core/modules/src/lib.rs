@@ -152,14 +152,16 @@ impl Engine {
         let mut root_event_queue = EventQueue::new();
         root_event_queue.push(event);
 
+        #[cfg(feature = "debuglog")]
         println!("New Root Event: {}", type_name::<T>());
         while !root_event_queue.is_empty() {
             for event in root_event_queue.drain() {
-                let now = Instant::now();
+                #[cfg(feature = "debuglog")]
                 print!("- Executing: {}", DebugName::of(&*event));
 
                 let mut event = event.as_any();
                 let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
+                    #[cfg(feature = "debuglog")]
                     println!("  ~ Empty Schedule ~");
                     continue;
                 };
@@ -173,7 +175,6 @@ impl Engine {
                 }
 
                 root_event_queue = root_event_queue.merge_after(event_queue);
-                println!(", done in {}ms", now.elapsed().as_secs_f32() / 1000.)
             }
         }
     }

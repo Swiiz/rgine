@@ -2,7 +2,7 @@ use rgine_platform::window::Window;
 use wgpu::*;
 
 //TODO: add real logging
-use std::{println as warn, sync::Arc};
+use std::sync::Arc;
 
 pub struct GraphicsCtx {
     pub device: Device,
@@ -82,24 +82,31 @@ impl GraphicsCtx {
         }
     }
 
-    pub(crate) fn next_frame(&self) -> Option<(SurfaceTexture, TextureView)> {
-        let surface_texture = self.surface.get_current_texture().map_err(|e| match e {
-            wgpu::SurfaceError::OutOfMemory => {
-                panic!("The system is out of memory for rendering!")
-            }
-            _ => format!("An error occured during surface texture acquisition: {e}"),
-        });
-
-        if surface_texture.is_err() {
-            warn!("{}", surface_texture.err().unwrap());
-            return None;
-        }
-        let surface_texture = surface_texture.unwrap();
+    pub(crate) fn next_frame(&self) -> Option<Frame> {
+        let surface_texture = self
+            .surface
+            .get_current_texture()
+            .map_err(|e| match e {
+                wgpu::SurfaceError::OutOfMemory => {
+                    panic!("The system is out of memory for rendering!")
+                }
+                _ => format!("An error occured during surface texture acquisition: {e}"),
+            })
+            .ok()?;
 
         let view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        Some((surface_texture, view))
+        Some(Frame {
+            surface_texture,
+            view,
+        })
+    }
+}
+
+impl Frame {
+    pub(crate) fn present(self) {
+        self.surface_texture.present();
     }
 }

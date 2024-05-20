@@ -5,6 +5,7 @@ edition = "2021"
 
 [features]
 standards = []
+debuglog = []
 default = ["standards"]
 
 [dependencies]
