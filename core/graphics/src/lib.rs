@@ -3,15 +3,17 @@ use rgine_modules::{
     events::{EventQueue, Listener},
     AnyResult, Dependency, Engine, Module,
 };
-use rgine_platform::window::module::{RequestWindowRedrawEvent, WindowPlatformModule};
+use rgine_platform::window::module::{
+    RequestWindowRedrawEvent, WindowPlatformModule, WindowRenderReadyEvent,
+};
 
 pub mod color;
 pub mod ctx;
 
 pub use rgine_platform::window::{
-    module::WindowRenderReadyEvent as PreRenderSubmitEvent,
     module::WindowResizeEvent as SurfaceResizeEvent, WindowReadyEvent,
 };
+pub struct PreSubmitRenderEvent;
 pub struct SubmitRenderEvent;
 pub struct RenderPresentEvent;
 
@@ -32,7 +34,7 @@ impl Module for GraphicsModule {
     type ListeningTo = (
         WindowReadyEvent,
         SurfaceResizeEvent,
-        PreRenderSubmitEvent,
+        WindowRenderReadyEvent,
         RenderPresentEvent,
     );
 
@@ -60,10 +62,11 @@ impl Listener<SurfaceResizeEvent> for GraphicsModule {
         }
     }
 }
-impl Listener<PreRenderSubmitEvent> for GraphicsModule {
-    fn on_event(&mut self, _: &mut PreRenderSubmitEvent, queue: &mut EventQueue) {
+impl Listener<WindowRenderReadyEvent> for GraphicsModule {
+    fn on_event(&mut self, _: &mut WindowRenderReadyEvent, queue: &mut EventQueue) {
         if let Some(frame) = self.ctx.as_ref().unwrap().next_frame() {
             self.current_frame = Some(frame);
+            queue.push(PreSubmitRenderEvent);
             queue.push(SubmitRenderEvent);
             queue.push(RenderPresentEvent);
         }

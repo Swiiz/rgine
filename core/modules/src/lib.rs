@@ -152,29 +152,32 @@ impl Engine {
         root_event_queue.push(event);
 
         #[cfg(feature = "debuglog")]
-        println!("New Root Event: {}", std::any::type_name::<T>());
-        while !root_event_queue.is_empty() {
-            for event in root_event_queue.drain() {
-                #[cfg(feature = "debuglog")]
-                println!("- Executing: {}", events::DebugName::of(&*event));
+        println!("NEW SCHEDULE:");
+        while let Some(event) = root_event_queue.take_last() {
+            #[cfg(feature = "debuglog")]
+            let debug_name = events::DebugName::of(&*event);
 
-                let mut event = event.as_any();
-                let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
-                    #[cfg(feature = "debuglog")]
-                    println!("  ~ Empty Schedule ~");
-                    continue;
-                };
+            let mut event = event.as_any();
+            let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
+                continue;
+            };
 
-                let mut event_queue = EventQueue::new();
+            #[cfg(feature = "debuglog")]
+            println!(
+                " - Dispatching {} on {} module(s).",
+                debug_name,
+                modules.len()
+            );
 
-                for tid in modules {
-                    self.modules
-                        .get_mut(tid)
-                        .map(|m| m.handle_event(event.as_mut(), &mut event_queue));
-                }
+            let mut event_queue = EventQueue::new();
 
-                root_event_queue = root_event_queue.merge_after(event_queue);
+            for tid in modules {
+                self.modules
+                    .get_mut(tid)
+                    .map(|m| m.handle_event(event.as_mut(), &mut event_queue));
             }
+
+            root_event_queue.extend(event_queue);
         }
     }
 }

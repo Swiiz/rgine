@@ -1,7 +1,7 @@
 use cgmath::{Array, Matrix3, Vector2};
 use renderer::SpriteRenderer;
 use rgine_graphics::{
-    GraphicsModule, PreRenderSubmitEvent, SubmitRenderEvent, SurfaceResizeEvent, WindowReadyEvent,
+    GraphicsModule, PreSubmitRenderEvent, SubmitRenderEvent, SurfaceResizeEvent, WindowReadyEvent,
 };
 use rgine_modules::{
     events::{EventQueue, Listener},
@@ -35,7 +35,7 @@ impl<L: AssetLoader> Module for Renderer2DModule<L> {
     type ListeningTo = (
         WindowReadyEvent,
         RefreshRenderer2DEvent,
-        PreRenderSubmitEvent,
+        PreSubmitRenderEvent,
         SubmitRenderEvent,
         SurfaceResizeEvent,
         DrawSpriteEvent,
@@ -69,8 +69,8 @@ impl<L: AssetLoader> Listener<RefreshRenderer2DEvent> for Renderer2DModule<L> {
     }
 }
 
-impl<L: AssetLoader> Listener<PreRenderSubmitEvent> for Renderer2DModule<L> {
-    fn on_event(&mut self, _: &mut PreRenderSubmitEvent, queue: &mut EventQueue) {
+impl<L: AssetLoader> Listener<PreSubmitRenderEvent> for Renderer2DModule<L> {
+    fn on_event(&mut self, _: &mut PreSubmitRenderEvent, queue: &mut EventQueue) {
         queue.push(Render2DEvent);
     }
 }

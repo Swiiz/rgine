@@ -51,14 +51,17 @@ impl EventQueue {
         Self { inner: Vec::new() }
     }
 
-    pub(crate) fn drain(&mut self) -> Vec<Box<dyn Event>> {
+    pub(crate) fn take_last(&mut self) -> Option<Box<dyn Event>> {
         let l = self.inner.len();
-        std::mem::replace(&mut self.inner, Vec::with_capacity(l))
+        if l == 0 {
+            return None;
+        }
+        Some(self.inner.remove(l - 1))
     }
 
-    pub(crate) fn merge_after(self, mut other: Self) -> Self {
-        other.inner.extend(self.inner);
-        Self { inner: other.inner }
+    pub(crate) fn extend(&mut self, mut other: Self) {
+        other.inner.reverse();
+        self.inner.extend(other.inner)
     }
 
     pub fn is_empty(&mut self) -> bool {
