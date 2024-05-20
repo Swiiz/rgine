@@ -15,19 +15,18 @@
 //! - `standards`: often used events (game engine related), useful for compatibility between modules (enabled by default)
 
 use std::{
-    any::{type_name, Any, TypeId},
+    any::{Any, TypeId},
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     error::Error,
     fmt::Display,
     marker::PhantomData,
     rc::Rc,
-    time::Instant,
 };
 
 use events::Event;
 
-use crate::events::{DebugName, EventList, EventQueue};
+use crate::events::{EventList, EventQueue};
 
 pub mod events;
 #[cfg(feature = "standards")]
@@ -153,11 +152,11 @@ impl Engine {
         root_event_queue.push(event);
 
         #[cfg(feature = "debuglog")]
-        println!("New Root Event: {}", type_name::<T>());
+        println!("New Root Event: {}", std::any::type_name::<T>());
         while !root_event_queue.is_empty() {
             for event in root_event_queue.drain() {
                 #[cfg(feature = "debuglog")]
-                print!("- Executing: {}", DebugName::of(&*event));
+                print!("- Executing: {}", events::DebugName::of(&*event));
 
                 let mut event = event.as_any();
                 let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {

@@ -1,6 +1,6 @@
 use std::{error::Error, sync::Arc};
 
-use self::module::{WindowPlatformModule, WindowResizeEvent};
+use self::module::WindowPlatformModule;
 use rgine_modules::{standards::events::OnShutdown, Engine};
 use winit::{
     application::ApplicationHandler,

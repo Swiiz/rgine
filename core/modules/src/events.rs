@@ -5,7 +5,7 @@ use std::{
 
 use crate::ModuleListener;
 #[cfg(debug_assertions)]
-pub trait DebugName {
+pub(crate) trait DebugName {
     fn of(&self) -> String;
 }
 impl<T> DebugName for T {
@@ -41,7 +41,7 @@ pub trait Listener<T: Event>: 'static {
     fn on_event(&mut self, event: &mut T, queue: &mut EventQueue);
 }
 
-/// Queue of events to be executed
+/// Queue of events to be dispatched
 pub struct EventQueue {
     inner: Vec<Box<dyn Event>>,
 }
