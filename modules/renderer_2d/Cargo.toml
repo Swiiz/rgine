@@ -8,6 +8,7 @@ edition = "2021"
 [dependencies]
 rgine_modules = { path = "../../core/modules" }
 rgine_graphics = { path = "../../core/graphics" }
+rgine_assets = { path = "../../core/assets" }
 
 wgpu = "0.20.0"
 cgmath = "0.18.0"

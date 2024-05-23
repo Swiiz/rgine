@@ -1,22 +1,12 @@
 use rgine_logger::info;
-use rgine_modules::{
-    events::{EventQueue, Listener},
-    standards::events::StartEvent,
-    Engine, {AnyResult, Dependency, Module},
-};
+use rgine_modules::prelude::*;
 
 pub struct OnPrint {
     pub message: String,
 }
 
 fn main() {
-    let mut engine = Engine::new();
-
-    engine
-        .dependency::<AutoLog>()
-        .expect("Failed to load Module A");
-
-    engine.start();
+    Engine::new::<AutoLog>().start();
 }
 
 pub struct AutoLog {

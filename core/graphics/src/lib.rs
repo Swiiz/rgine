@@ -1,7 +1,7 @@
 use ctx::{Frame, GraphicsCtx};
 use rgine_modules::{
     events::{EventQueue, Listener},
-    standards::events::ShutdownEvent,
+    standards::ShutdownEvent,
     AnyResult, Dependency, Engine, Module,
 };
 use rgine_platform::window::module::{

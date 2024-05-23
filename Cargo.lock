@@ -1235,11 +1235,19 @@ name = "rgine"
 version = "0.1.0"
 dependencies = [
  "cgmath",
+ "rgine_assets",
  "rgine_graphics",
  "rgine_logger",
  "rgine_modules",
  "rgine_platform",
  "rgine_renderer_2d",
+]
+
+[[package]]
+name = "rgine_assets"
+version = "0.1.0"
+dependencies = [
+ "rgine_modules",
 ]
 
 [[package]]
@@ -1289,6 +1297,7 @@ version = "0.1.0"
 dependencies = [
  "bytemuck",
  "cgmath",
+ "rgine_assets",
  "rgine_graphics",
  "rgine_modules",
  "texture_packer",

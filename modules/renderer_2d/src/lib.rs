@@ -1,5 +1,6 @@
 use cgmath::{Array, Matrix3, Vector2};
 use renderer::SpriteRenderer;
+use rgine_assets::AssetsModule;
 use rgine_graphics::{
     GraphicsModule, PreSubmitRenderEvent, SubmitRenderEvent, SurfaceResizeEvent, WindowReadyEvent,
 };
@@ -13,8 +14,11 @@ use texture::{DrawParams, Sprite, SpriteSheetsRegistry};
 mod renderer;
 pub mod texture;
 
-pub trait AssetLoader: Module {
-    fn sprite_registry(&self) -> SpriteSheetsRegistry;
+pub mod prelude {
+    pub use crate::{
+        texture::{DrawParams, Sprite, SpriteSheetData, SpriteSheetHandle, SpriteSheetsRegistry},
+        Draw2d, Render2DEvent, Renderer2DModule,
+    };
 }
 
 pub struct Render2DEvent;
@@ -22,16 +26,17 @@ pub struct DrawSpriteEvent {
     sprite: Sprite,
     params: DrawParams,
 }
+pub struct RegisterSpriteEvent;
 pub struct RefreshRenderer2DEvent;
 
-pub struct Renderer2DModule<L: AssetLoader> {
+pub struct Renderer2DModule {
     graphics: Dependency<GraphicsModule>,
-    asset_loader: Dependency<L>,
+    asset_loader: Dependency<AssetsModule>,
 
     renderer: Option<SpriteRenderer>,
 }
 
-impl<L: AssetLoader> Module for Renderer2DModule<L> {
+impl Module for Renderer2DModule {
     type ListeningTo = (
         WindowReadyEvent,
         RefreshRenderer2DEvent,
@@ -42,7 +47,7 @@ impl<L: AssetLoader> Module for Renderer2DModule<L> {
     );
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
         let graphics = ctx.dependency::<GraphicsModule>()?;
-        let asset_loader = ctx.dependency::<L>()?;
+        let asset_loader = ctx.dependency::<AssetsModule>()?;
 
         Ok(Self {
             graphics,
@@ -52,30 +57,31 @@ impl<L: AssetLoader> Module for Renderer2DModule<L> {
     }
 }
 
-impl<L: AssetLoader> Listener<WindowReadyEvent> for Renderer2DModule<L> {
+impl Listener<WindowReadyEvent> for Renderer2DModule {
     fn on_event(&mut self, _: &mut WindowReadyEvent, queue: &mut EventQueue) {
         queue.push(RefreshRenderer2DEvent);
     }
 }
 
-impl<L: AssetLoader> Listener<RefreshRenderer2DEvent> for Renderer2DModule<L> {
+impl Listener<RefreshRenderer2DEvent> for Renderer2DModule {
     fn on_event(&mut self, _: &mut RefreshRenderer2DEvent, _: &mut EventQueue) {
         let g = self.graphics.read_state();
+        let assets = self.asset_loader.read_state();
         self.renderer.replace(SpriteRenderer::new(
             g.ctx.as_ref().unwrap(),
             g.window_size().unwrap(),
-            self.asset_loader.read_state().sprite_registry(),
+            assets.get::<SpriteSheetsRegistry>().clone(),
         ));
     }
 }
 
-impl<L: AssetLoader> Listener<PreSubmitRenderEvent> for Renderer2DModule<L> {
+impl Listener<PreSubmitRenderEvent> for Renderer2DModule {
     fn on_event(&mut self, _: &mut PreSubmitRenderEvent, queue: &mut EventQueue) {
         queue.push(Render2DEvent);
     }
 }
 
-impl<L: AssetLoader> Listener<SubmitRenderEvent> for Renderer2DModule<L> {
+impl Listener<SubmitRenderEvent> for Renderer2DModule {
     fn on_event(&mut self, _: &mut SubmitRenderEvent, _: &mut EventQueue) {
         if let Some(renderer) = &mut self.renderer {
             let g = self.graphics.read_state();
@@ -86,7 +92,7 @@ impl<L: AssetLoader> Listener<SubmitRenderEvent> for Renderer2DModule<L> {
     }
 }
 
-impl<L: AssetLoader> Listener<SurfaceResizeEvent> for Renderer2DModule<L> {
+impl Listener<SurfaceResizeEvent> for Renderer2DModule {
     fn on_event(&mut self, _: &mut SurfaceResizeEvent, _: &mut EventQueue) {
         if let Some(renderer) = &mut self.renderer {
             let g = self.graphics.read_state();
@@ -96,7 +102,7 @@ impl<L: AssetLoader> Listener<SurfaceResizeEvent> for Renderer2DModule<L> {
     }
 }
 
-impl<L: AssetLoader> Listener<DrawSpriteEvent> for Renderer2DModule<L> {
+impl Listener<DrawSpriteEvent> for Renderer2DModule {
     fn on_event(&mut self, event: &mut DrawSpriteEvent, _: &mut EventQueue) {
         self.renderer
             .as_mut()
@@ -111,7 +117,7 @@ impl<'a> Draw2d<'a> {
         self.0.push(DrawSpriteEvent { sprite, params })
     }
     pub fn sprite_centered(&mut self, sprite: Sprite, mut params: DrawParams) {
-        params.transform = Matrix3::from_translation(Vector2::from_value(-0.5)) * params.transform;
+        params.transform = params.transform * Matrix3::from_translation(Vector2::from_value(-0.5));
         self.0.push(DrawSpriteEvent { sprite, params })
     }
 }

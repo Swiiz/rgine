@@ -7,13 +7,7 @@ use rgine_platform::window::{WindowPlatformConfig, WindowPlatformEngineExt};
 use wgpu::*;
 
 fn main() {
-    let mut engine = Engine::new();
-
-    engine.dependency::<Example>().unwrap();
-
-    engine
-        .run_windowed(WindowPlatformConfig::default())
-        .unwrap();
+    Engine::new::<Example>().run_windowed(WindowPlatformConfig::default());
 }
 
 pub struct Example {

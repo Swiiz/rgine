@@ -1,20 +1,12 @@
 use rgine_logger::info;
-use rgine_modules::{
-    events::{EventQueue, Listener},
-    standards::events::{ShutdownEvent, StartEvent},
-    Engine, Module,
-};
+use rgine_modules::prelude::*;
 use rgine_platform::window::{
     module::WindowRenderReadyEvent, OnWindowPlatformUpdate, WindowPlatformConfig,
     WindowPlatformEngineExt,
 };
 
 fn main() {
-    let mut engine = Engine::new();
-    engine.dependency::<ExampleModule>().unwrap();
-    engine
-        .run_windowed(WindowPlatformConfig::default())
-        .unwrap();
+    Engine::new::<ExampleModule>().run_windowed(WindowPlatformConfig::default());
 }
 
 struct ExampleModule;

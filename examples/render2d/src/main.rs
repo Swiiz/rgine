@@ -1,82 +1,56 @@
-use rgine::{
-    graphics::color::Color3,
-    maths::{Array, Matrix3, SquareMatrix, Vector2, Zero},
-    maths_extra::One,
-    modules::{
-        events::{EventQueue, Listener},
-        AnyResult, Dependency, Engine, Module,
-    },
-    platform::window::{WindowPlatformConfig, WindowPlatformEngineExt},
-    renderer_2d::{
-        texture::{DrawParams, Sprite, SpriteSheetData, SpriteSheetHandle, SpriteSheetsRegistry},
-        AssetLoader, Draw2d, Render2DEvent, Renderer2DModule,
-    },
-};
+use std::{f32::consts::PI, time::Instant};
 
-fn main() -> AnyResult<()> {
-    let mut engine = Engine::new();
+use rgine::prelude::*;
 
-    engine.dependency::<Example>().unwrap();
-
-    engine.run_windowed(WindowPlatformConfig::default())
+fn main() {
+    Engine::new::<Example>().run_windowed(WindowPlatformConfig::default());
 }
-
-type RendererModule = Renderer2DModule<AssetsModule>;
 
 struct Example {
-    assets: Dependency<AssetsModule>,
+    time: Instant,
+    characters_sheet: Option<SpriteSheetHandle>,
 }
 impl Module for Example {
-    type ListeningTo = (Render2DEvent,);
+    type ListeningTo = (Render2DEvent, StartEvent);
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
-        ctx.dependency::<RendererModule>()?;
+        ctx.dependency::<Renderer2DModule>()?;
 
         Ok(Self {
-            assets: ctx.dependency()?,
+            time: Instant::now(),
+            characters_sheet: None,
         })
+    }
+}
+
+impl Listener<StartEvent> for Example {
+    fn on_event(&mut self, _: &mut StartEvent, queue: &mut EventQueue) {
+        let mut sprite_registry = SpriteSheetsRegistry::new();
+
+        self.characters_sheet = Some(sprite_registry.register(SpriteSheetData {
+            path: "./examples/render2d/assets/characters.png".to_string(),
+            sprite_px_size: Vector2::from_value(16),
+        }));
+
+        queue.load_asset(sprite_registry);
     }
 }
 
 impl Listener<Render2DEvent> for Example {
     fn on_event(&mut self, _: &mut Render2DEvent, queue: &mut EventQueue) {
+        let rotation = Rad(self.time.elapsed().subsec_millis() as f32 * PI / 500.);
+
         let mut draw = Draw2d(queue);
         draw.sprite_centered(
             Sprite {
-                sheet: self.assets.read_state().characters_sheet,
+                sheet: self.characters_sheet.unwrap(),
                 position: Vector2::zero(),
                 size: Vector2::one(),
             },
             DrawParams {
                 depth: 0.,
                 tint: Color3::WHITE,
-                transform: Matrix3::identity(),
+                transform: Matrix3::from_angle_z(rotation),
             },
         );
-    }
-}
-
-struct AssetsModule {
-    pub characters_sheet: SpriteSheetHandle,
-    sprite_registry: SpriteSheetsRegistry,
-}
-impl Module for AssetsModule {
-    type ListeningTo = ();
-    fn new(_: &mut Engine) -> AnyResult<Self> {
-        let mut sprite_registry = SpriteSheetsRegistry::new();
-
-        let characters_sprite = sprite_registry.register(SpriteSheetData {
-            path: "./examples/render2d/assets/characters.png".to_string(),
-            sprite_px_size: Vector2::from_value(16),
-        });
-
-        Ok(AssetsModule {
-            characters_sheet: characters_sprite,
-            sprite_registry,
-        })
-    }
-}
-impl AssetLoader for AssetsModule {
-    fn sprite_registry(&self) -> SpriteSheetsRegistry {
-        self.sprite_registry.clone()
     }
 }

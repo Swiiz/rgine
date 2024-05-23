@@ -25,13 +25,26 @@ use std::{
 };
 
 use events::Event;
-use rgine_logger::{debug, init_logger};
+#[cfg(feature = "debuglog")]
+use rgine_logger::debug;
+use rgine_logger::init_logger;
 
 use crate::events::{EventList, EventQueue};
 
 pub mod events;
 #[cfg(feature = "standards")]
 pub mod standards;
+pub mod utils;
+
+pub mod prelude {
+    pub use crate::{
+        events::{EventQueue, Listener},
+        AnyResult, Dependency, Engine, Module,
+    };
+
+    #[cfg(feature = "standards")]
+    pub use crate::standards::*;
+}
 
 /// Modules are an easy way to decouple code.
 /// Those can be loaded from the `Engine` struct.
@@ -90,16 +103,20 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn new() -> Self {
+    pub fn new<Entrypoint: Module>() -> Self {
         init_logger();
-        Self::new_without_logger()
+        Self::new_without_logger::<Entrypoint>()
     }
 
-    pub fn new_without_logger() -> Self {
-        Self {
+    pub fn new_without_logger<Entrypoint: Module>() -> Self {
+        let mut _self = Self {
             modules: Modules::new(),
             subscribers: EventModuleSubscribers::new(),
-        }
+        };
+        _self
+            .dependency::<Entrypoint>()
+            .expect("Failed to load engine entrypoint module");
+        _self
     }
 
     /// Returns the module `T` as a `Dependency<T>`, loading it if not found.
@@ -148,7 +165,7 @@ impl Engine {
     /// and continue dispatching events until the [`EventQueue`] is empty.
     #[cfg(feature = "standards")]
     pub fn start(&mut self) {
-        self.run_with(standards::events::StartEvent)
+        self.run_with(standards::StartEvent)
     }
 
     /// Dispatch the event `T` to all subscribed modules

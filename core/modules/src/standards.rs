@@ -1,4 +1,2 @@
-pub mod events {
-    pub struct StartEvent;
-    pub struct ShutdownEvent;
-}
+pub struct StartEvent;
+pub struct ShutdownEvent;

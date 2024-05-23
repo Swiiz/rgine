@@ -1,7 +1,7 @@
-use std::{error::Error, sync::Arc};
+use std::sync::Arc;
 
 use self::module::WindowPlatformModule;
-use rgine_modules::{standards::events::ShutdownEvent, Engine};
+use rgine_modules::{standards::ShutdownEvent, Engine};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -14,20 +14,21 @@ pub use winit::window::{Window, WindowAttributes};
 
 pub trait WindowPlatformEngineExt {
     // Take self as owned so that it can't be called when running the engine
-    fn run_windowed(self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>>;
+    fn run_windowed(self, config: WindowPlatformConfig);
 }
 
 impl WindowPlatformEngineExt for Engine {
-    fn run_windowed(mut self, config: WindowPlatformConfig) -> Result<(), Box<dyn Error>> {
+    fn run_windowed(mut self, config: WindowPlatformConfig) {
         let event_loop = EventLoop::new().unwrap();
         event_loop.set_control_flow(ControlFlow::Poll);
 
-        self.dependency::<WindowPlatformModule>()?;
+        self.dependency::<WindowPlatformModule>().expect(
+            "Failed to load window platform module from platform layer on window platform.",
+        );
         self.start();
 
         let mut platform_layer = EngineWindowPlatformWrapper::new(&mut self, config);
-        event_loop.run_app(&mut platform_layer)?;
-        Ok(())
+        event_loop.run_app(&mut platform_layer).unwrap();
     }
 }
 
