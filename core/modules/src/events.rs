@@ -34,6 +34,14 @@ impl<T: Any + DebugName> Event for T {
     }
 }
 
+pub struct AnyEvent {
+    pub inner: Box<dyn Event>,
+    pub metadata: EventMetadata,
+}
+
+#[derive(Default)]
+pub struct EventMetadata {}
+
 /// Allows for module to listen to Event `T`.
 ///
 /// **WARNING: For this to work you need to add the event type to the associated type `<Self as Module>::ListeningTo`**
@@ -43,7 +51,7 @@ pub trait Listener<T: Event>: 'static {
 
 /// Queue of events to be dispatched
 pub struct EventQueue {
-    inner: Vec<Box<dyn Event>>,
+    inner: Vec<AnyEvent>,
 }
 
 impl EventQueue {
@@ -51,7 +59,7 @@ impl EventQueue {
         Self { inner: Vec::new() }
     }
 
-    pub(crate) fn take_last(&mut self) -> Option<Box<dyn Event>> {
+    pub(crate) fn take_last(&mut self) -> Option<AnyEvent> {
         let l = self.inner.len();
         if l == 0 {
             return None;
@@ -68,9 +76,17 @@ impl EventQueue {
         self.inner.is_empty()
     }
 
-    /// Pushes a new event `T` into the event queue to be dispatched.
+    /// Pushes a new event `T` into the event queue to be dispatched with default metadata.
     pub fn push<T: Event>(&mut self, event: T) {
-        self.inner.push(Box::new(event))
+        self.push_with_metadata(event, EventMetadata::default());
+    }
+
+    /// Pushes a new event `T` into the event queue to be dispatched with custom added metadata.
+    pub fn push_with_metadata<T: Event>(&mut self, event: T, metadata: EventMetadata) {
+        self.inner.push(AnyEvent {
+            inner: Box::new(event),
+            metadata,
+        })
     }
 }
 

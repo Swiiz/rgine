@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use self::module::WindowPlatformModule;
-use rgine_modules::{standards::ShutdownEvent, Engine};
+use rgine_modules::{
+    standards::{ShutdownEvent, StartEvent},
+    Engine,
+};
 use winit::{
     application::ApplicationHandler,
     event::WindowEvent,
@@ -25,7 +28,7 @@ impl WindowPlatformEngineExt for Engine {
         self.dependency::<WindowPlatformModule>().expect(
             "Failed to load window platform module from platform layer on window platform.",
         );
-        self.start();
+        self.run_with(StartEvent);
 
         let mut platform_layer = EngineWindowPlatformWrapper::new(&mut self, config);
         event_loop.run_app(&mut platform_layer).unwrap();

@@ -24,7 +24,7 @@ use std::{
     rc::Rc,
 };
 
-use events::Event;
+use events::{AnyEvent, Event, EventMetadata};
 #[cfg(feature = "debuglog")]
 use rgine_logger::debug;
 use rgine_logger::init_logger;
@@ -100,6 +100,7 @@ type EventModuleSubscribers = HashMap<TypeId, Vec<TypeId>>;
 pub struct Engine {
     modules: Modules,
     subscribers: EventModuleSubscribers,
+    middlewares: Vec<Box<dyn FnMut(&mut AnyEvent, &mut EventQueue)>>,
 }
 
 impl Engine {
@@ -112,6 +113,7 @@ impl Engine {
         let mut _self = Self {
             modules: Modules::new(),
             subscribers: EventModuleSubscribers::new(),
+            middlewares: Vec::new(),
         };
         _self
             .dependency::<Entrypoint>()
@@ -161,11 +163,11 @@ impl Engine {
         self.modules.contains_key(&TypeId::of::<T>())
     }
 
-    /// Dispatch the event [`standards::events::OnStart`] to all subscribed modules
-    /// and continue dispatching events until the [`EventQueue`] is empty.
-    #[cfg(feature = "standards")]
-    pub fn start(&mut self) {
-        self.run_with(standards::StartEvent)
+    pub fn add_event_proxy(
+        &mut self,
+        event_proxy: impl FnMut(&mut AnyEvent, &mut EventQueue) + 'static,
+    ) {
+        self.middlewares.push(Box::new(event_proxy))
     }
 
     /// Dispatch the event `T` to all subscribed modules
@@ -176,14 +178,22 @@ impl Engine {
 
         #[cfg(feature = "debuglog")]
         debug!("NEW SCHEDULE:");
-        while let Some(event) = root_event_queue.take_last() {
+        while let Some(mut event) = root_event_queue.take_last() {
             #[cfg(feature = "debuglog")]
-            let debug_name = events::DebugName::of(&*event);
+            let debug_name = events::DebugName::of(&*event.inner);
 
-            let mut event = event.as_any();
+            let mut event_queue = EventQueue::new();
+
+            for middleware in &mut self.middlewares {
+                middleware(&mut event, &mut event_queue);
+            }
+
+            let mut event = event.inner.as_any();
+
             let Some(modules) = self.subscribers.get(&(&*event).type_id()) else {
                 #[cfg(feature = "debuglog")]
                 debug!(" ~ No listener for {}", debug_name);
+                root_event_queue.extend(event_queue);
                 continue;
             };
 
@@ -193,8 +203,6 @@ impl Engine {
                 debug_name,
                 modules.len()
             );
-
-            let mut event_queue = EventQueue::new();
 
             for tid in modules {
                 self.modules
