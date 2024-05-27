@@ -6,7 +6,7 @@ pub struct OnPrint {
 }
 
 fn main() {
-    Engine::new::<AutoLog>().start();
+    Engine::new::<AutoLog>().run_with(StartEvent);
 }
 
 pub struct AutoLog {

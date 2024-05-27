@@ -161,13 +161,6 @@ impl Engine {
         self.modules.contains_key(&TypeId::of::<T>())
     }
 
-    /// Dispatch the event [`standards::events::OnStart`] to all subscribed modules
-    /// and continue dispatching events until the [`EventQueue`] is empty.
-    #[cfg(feature = "standards")]
-    pub fn start(&mut self) {
-        self.run_with(standards::StartEvent)
-    }
-
     /// Dispatch the event `T` to all subscribed modules
     /// and continue dispatching events until the [`EventQueue`] is empty.
     pub fn run_with<T: Event>(&mut self, event: T) {
