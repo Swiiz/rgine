@@ -17,14 +17,16 @@ cgmath = "0.18.0"
 
 # Modules
 rgine_renderer_2d = { path = "modules/renderer_2d", optional = true }
+rgine_disk_assets = { path = "modules/disk_assets", optional = true }
 
 [features]
 schedulelog = ["rgine_modules/debuglog"]
+assets_loader = [ "dep:rgine_disk_assets"]
 
 graphics = ["rgine_platform/window", "dep:rgine_graphics"]
 2d = ["graphics", "dep:rgine_renderer_2d"]
 
-default = ["graphics"] ##TODO: nice default features
+default = ["graphics", "assets_loader"] ##TODO: should we add 2d by default? or wait for 3d support????
 
 [workspace]
 members = [

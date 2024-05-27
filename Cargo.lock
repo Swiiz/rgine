@@ -1236,6 +1236,7 @@ version = "0.1.0"
 dependencies = [
  "cgmath",
  "rgine_assets",
+ "rgine_disk_assets",
  "rgine_graphics",
  "rgine_logger",
  "rgine_modules",
@@ -1247,6 +1248,15 @@ dependencies = [
 name = "rgine_assets"
 version = "0.1.0"
 dependencies = [
+ "rgine_modules",
+]
+
+[[package]]
+name = "rgine_disk_assets"
+version = "0.1.0"
+dependencies = [
+ "rgine_assets",
+ "rgine_logger",
  "rgine_modules",
 ]
 
