@@ -6,13 +6,12 @@ pub struct OnPrint {
 }
 
 fn main() {
-    Engine::new::<AutoLog>().run_with(StartEvent);
+    Engine::new::<AutoLog>().start();
 }
 
 pub struct AutoLog {
     lang: Dependency<Language>,
 }
-
 impl Module for AutoLog {
     type ListeningTo = (StartEvent,);
     fn new(ctx: &mut Engine) -> AnyResult<Self> {
@@ -23,7 +22,6 @@ impl Module for AutoLog {
         })
     }
 }
-
 impl Listener<StartEvent> for AutoLog {
     fn on_event(&mut self, _: &mut StartEvent, queue: &mut EventQueue) {
         let lang = self.lang.read_state();
