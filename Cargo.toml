@@ -21,12 +21,12 @@ rgine_disk_assets = { path = "modules/disk_assets", optional = true }
 
 [features]
 schedulelog = ["rgine_modules/debuglog"]
-assets_loader = [ "dep:rgine_disk_assets"]
+asset_loader = [ "dep:rgine_disk_assets"]
 
 graphics = ["rgine_platform/window", "dep:rgine_graphics"]
 2d = ["graphics", "dep:rgine_renderer_2d"]
 
-default = ["graphics", "assets_loader"] ##TODO: should we add 2d by default? or wait for 3d support????
+default = ["graphics", "asset_loader"] ##TODO: should we add 2d by default? or wait for 3d support????
 
 [workspace]
 members = [

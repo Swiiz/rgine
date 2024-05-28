@@ -1,15 +1,19 @@
 pub use rgine_assets as assets;
 pub use rgine_graphics as graphics;
+pub use rgine_logger::*;
 pub use rgine_modules as modules;
 pub use rgine_platform as platform;
 
-pub use rgine_logger::*;
-
+#[cfg(feature = "asset_loader")]
+pub use rgine_disk_assets as disk_assets;
 #[cfg(feature = "2d")]
 pub use rgine_renderer_2d as renderer_2d;
 
 pub mod prelude {
     pub use crate::{assets::AssetsEventQueueExt, maths::*, modules::prelude::*};
+
+    #[cfg(feature = "asset_loader")]
+    pub use crate::disk_assets::FileAssetsEventQueueExt;
 
     #[cfg(feature = "graphics")]
     pub use crate::{
